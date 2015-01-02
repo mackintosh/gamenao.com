@@ -1,0 +1,41 @@
+[user]
+	name = Mackintosh
+	email = mackintosh@gamenao.com
+  [color]
+  status = auto
+	diff               = auto
+	branch             = auto
+	interactive        = auto
+[alias]
+	ba = branch -a
+	st = status
+  commit = commit -v
+	ci = commit -v
+	co = checkout
+	staged = diff --cached
+	unstaged = diff
+	both = diff HEAD
+	oneline = log --pretty=oneline
+	amend = commit --amend
+	bl = branch
+	br = branch -r
+	continue = rebase --continue
+	abort = rebase --abort
+	skip = rebase --skip
+	bd = branch -d
+	rprune = remote prune
+	vimdiff = "difftool -y -t vimdiff -R"
+	lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+[merge]
+	tool               = vimdiff
+[repack]
+	usedeltabaseoffset = true
+[format]
+	numbered           = auto
+[push]
+	default = current
+[core]
+	editor = vim
+[filter "media"]
+	clean = git-media-clean %f
+	smudge = git-media-smudge %f
