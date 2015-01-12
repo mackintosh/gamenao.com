@@ -2,13 +2,97 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>GAMENAO</title>
-    <description>Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.
-</description>
+    <description>A simple blog</description>
     <link>http://yourdomain.com/</link>
     <atom:link href="http://yourdomain.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 02 Jan 2015 23:03:36 +0900</pubDate>
-    <lastBuildDate>Fri, 02 Jan 2015 23:03:36 +0900</lastBuildDate>
+    <pubDate>Mon, 12 Jan 2015 20:25:50 +0900</pubDate>
+    <lastBuildDate>Mon, 12 Jan 2015 20:25:50 +0900</lastBuildDate>
     <generator>Jekyll v2.5.3</generator>
+    
+      <item>
+        <title>The MIDI format - Part I</title>
+        <description>&lt;p&gt;As a side project I’ve been writing a library in Go to parse MIDI information. This series
+of blog posts I’ll show you how to write a program to read from a MIDI file.&lt;/p&gt;
+
+&lt;h2 id=&quot;standard-midi-format---smf&quot;&gt;Standard MIDI Format - SMF&lt;/h2&gt;
+
+&lt;p&gt;The SMF file format contains header and track chunks which are composed of a series of bytes.
+The &lt;strong&gt;Header Chunk&lt;/strong&gt; describes the format of the MIDI file, the timing, and the number of tracks.
+And the &lt;strong&gt;Track Chunk&lt;/strong&gt; holds the event data for a particular track.&lt;/p&gt;
+
+&lt;p&gt;Will only cover the Header Chunk in this blog post. I’ll continue in my 
+next post about in more detail about the Track Chunk since its quite complex.&lt;/p&gt;
+
+&lt;h2 id=&quot;header-chunk-aka-mthd-header&quot;&gt;Header Chunk a.k.a “MThd Header”&lt;/h2&gt;
+
+&lt;p&gt;The header follows a pretty simple format and easy to parse.
+An important thing to note that the file format uses Big endian encoding. Here’s an example:&lt;/p&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-go&quot; data-lang=&quot;go&quot;&gt;&lt;span class=&quot;c1&quot;&gt;// header_chunk = &amp;quot;MThd&amp;quot; + &amp;lt;header_length&amp;gt; + &amp;lt;format&amp;gt; + &amp;lt;n&amp;gt; + &amp;lt;division&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MThdHeader&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;Type&lt;/span&gt;      &lt;span class=&quot;kt&quot;&gt;uint32&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;Size&lt;/span&gt;      &lt;span class=&quot;kt&quot;&gt;uint32&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;Format&lt;/span&gt;    &lt;span class=&quot;kt&quot;&gt;uint16&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;NumTracks&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;uint16&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;PPQN&lt;/span&gt;      &lt;span class=&quot;kt&quot;&gt;uint16&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;table&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;strong&gt;Type&lt;/strong&gt;&lt;/td&gt;
+      &lt;td&gt;4 byte string which is always “MThd”&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;strong&gt;Size&lt;/strong&gt;&lt;/td&gt;
+      &lt;td&gt;Size of the header chunk&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;strong&gt;Format&lt;/strong&gt;&lt;/td&gt;
+      &lt;td&gt;A value of 0 indicates the file only has 1 tracks. A value of 1 means two or more tracks, and a value of 2 indicates a combination of both&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;strong&gt;NumTracks&lt;/strong&gt;&lt;/td&gt;
+      &lt;td&gt;Number of tracks in the midi file&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;strong&gt;PPQN&lt;/strong&gt;&lt;/td&gt;
+      &lt;td&gt;Pulses per quarter note&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;&lt;br /&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;loading-the-file-in-go&quot;&gt;Loading the file in Go&lt;/h1&gt;
+
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-go&quot; data-lang=&quot;go&quot;&gt;&lt;span class=&quot;kd&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;header&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;MThdHeader&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{}&lt;/span&gt;
+
+  &lt;span class=&quot;nx&quot;&gt;file&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;:=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;os&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Open&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;sample.mid&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;check&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+  &lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;binary&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Read&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;file&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;binary&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;BigEndian&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;check&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;err&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+  &lt;span class=&quot;nx&quot;&gt;fmt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Println&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;NumTracks&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;NumTracks&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;fmt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Println&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;PPQN&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;PPQN&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;fmt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Println&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Format&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;header&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;Format&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;That’s it for this post. In the next example I’ll go into more detail
+about how to read a Track.&lt;/p&gt;
+</description>
+        <pubDate>Mon, 12 Jan 2015 09:00:00 +0900</pubDate>
+        <link>http://yourdomain.com/midi,/programming/2015/01/12/midi-format-part-i.html</link>
+        <guid isPermaLink="true">http://yourdomain.com/midi,/programming/2015/01/12/midi-format-part-i.html</guid>
+        
+        
+        <category>midi,</category>
+        
+        <category>programming</category>
+        
+      </item>
     
       <item>
         <title>Renewed domain</title>
